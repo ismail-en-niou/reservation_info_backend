@@ -96,6 +96,29 @@ app.put('/modify-membership', async (req, res) => {
   }
 });
 
+// Route to check if a user exists in the database
+app.get('/check-user', async (req, res) => {
+  const { email } = req.query; // Get the email from query parameters
+  const dbRef = ref(database, 'reservations');
+
+  try {
+    // Check if the email exists in the database
+    const emailQuery = query(dbRef, orderByChild('email'), equalTo(email));
+    const existingReservationsSnapshot = await get(emailQuery);
+    
+    if (existingReservationsSnapshot.exists()) {
+      const reservationData = existingReservationsSnapshot.val();
+      const isPaid = reservationData.membershipPaid ? 'is paid' : 'is not paid';
+      return res.status(200).json({ message: `User exists in the database and ${isPaid}.` });
+    } else {
+      return res.status(404).json({ message: 'User not found in the database.' });
+    }
+  } catch (error) {
+    console.error('Error checking user:', error); // Log the error
+    res.status(500).json({ message: 'Error checking user' });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });

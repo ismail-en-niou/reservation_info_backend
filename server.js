@@ -12,7 +12,7 @@ app.use(express.json());
 const maxCapacity = 100; // Maximum capacity of the club
 
 // Route to get current reserved count
-app.get('/api/reservations', async (req, res) => {
+app.get('/reservations', async (req, res) => {
   try {
     const dbRef = ref(database, 'reservations');
     const snapshot = await get(dbRef);
@@ -31,7 +31,7 @@ app.get('/api/reservations', async (req, res) => {
 });
 
 // Route to reserve a spot
-app.post('/api/reserve', async (req, res) => {
+app.post('/reserve', async (req, res) => {
   const { name, email, phone, sector, contactMethod, message } = req.body; // Destructure user data
   const dbRef = ref(database, 'reservations');
 

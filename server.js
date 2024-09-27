@@ -109,7 +109,7 @@ app.get('/check-user', async (req, res) => {
     if (existingReservationsSnapshot.exists()) {
       const reservationData = existingReservationsSnapshot.val();
       const isPaid = reservationData.membershipPaid ? 'is paid' : 'is not paid';
-      return res.status(200).json({ message: `User exists in the database and ${isPaid}.` });
+      return res.status(200).json({ message: `User exists in the database and ${isPaid , reservationData}.` });
     } else {
       return res.status(404).json({ message: 'User not found in the database.' });
     }

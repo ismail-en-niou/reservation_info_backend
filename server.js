@@ -33,7 +33,7 @@ app.get('/reservations', async (req, res) => {
 
 // Route to reserve a spot
 app.post('/reserve', async (req, res) => {
-  const { name, email, phone, sector, contactMethod, message } = req.body; // Destructure user data
+  const { name, email, phone, sector, contactMethod, message, membershipPaid } = req.body; // Destructure user data to include membershipPaid
   const dbRef = ref(database, 'reservations');
 
   try {
@@ -48,7 +48,7 @@ app.post('/reserve', async (req, res) => {
     const reservedCount = snapshot.exists() ? snapshot.size : 0; // Get current reserved count
 
     if (reservedCount < maxCapacity) {
-      // Save reservation to Firebase
+      // Save reservation to Firebase, including membershipPaid
       await set(ref(database, 'reservations/' + (reservedCount + 1)), {
         name,
         email,
@@ -56,8 +56,9 @@ app.post('/reserve', async (req, res) => {
         sector, // Save the sector
         contactMethod,
         message,
+        membershipPaid, // Include membershipPaid in the reservation data
       });
-      console.log(`Reserved by: ${name}, Email: ${email}, Phone: ${phone}, Sector: ${sector}, Contact Method: ${contactMethod}, Message: ${message}`); // Log user data
+      console.log(`Reserved by: ${name}, Email: ${email}, Phone: ${phone}, Sector: ${sector}, Contact Method: ${contactMethod}, Message: ${message}, Membership Paid: ${membershipPaid}`); // Log user data
       res.status(200).json({ message: 'Spot reserved!', reservedCount: reservedCount + 1 });
     } else {
       res.status(400).json({ message: 'No more spots available!' });
@@ -65,6 +66,33 @@ app.post('/reserve', async (req, res) => {
   } catch (error) {
     console.error('Error reserving spot:', error); // Log the error
     res.status(500).json({ message: 'Error reserving spot' });
+  }
+});
+
+// Route to modify membership status
+app.put('/modify-membership', async (req, res) => {
+  const { email, membershipPaid } = req.body; // Destructure user data to include email and membershipPaid
+  const dbRef = ref(database, 'reservations');
+
+  try {
+    // Check if the email exists in the database
+    const emailQuery = query(dbRef, orderByChild('email'), equalTo(email));
+    const existingReservationsSnapshot = await get(emailQuery);
+    
+    if (!existingReservationsSnapshot.exists()) {
+      return res.status(404).json({ message: 'No reservation found for this email!' });
+    }
+
+    // Get the key of the existing reservation
+    const reservationKey = Object.keys(existingReservationsSnapshot.val())[0];
+
+    // Update the membershipPaid status
+    await set(ref(database, 'reservations/' + reservationKey + '/membershipPaid'), membershipPaid);
+    
+    res.status(200).json({ message: 'Membership status updated successfully!' });
+  } catch (error) {
+    console.error('Error modifying membership status:', error); // Log the error
+    res.status(500).json({ message: 'Error modifying membership status' });
   }
 });
 

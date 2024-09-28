@@ -9,7 +9,7 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-const maxCapacity = 0 ; // Maximum capacity of the club
+const maxCapacity = 300 ; // Maximum capacity of the club
 
 // Route to get current reserved count
 app.get('/reservations', async (req, res) => {
@@ -33,7 +33,7 @@ app.get('/reservations', async (req, res) => {
 
 // Route to reserve a spot
 app.post('/reserve', async (req, res) => {
-  const { name, email, phone, sector, contactMethod, message, membershipPaid } = req.body; // Destructure user data to include membershipPaid
+  const { name, email, phone, sector, contactMethod, message, membershipPaid, membershipType } = req.body; // Add membershipType
   const dbRef = ref(database, 'reservations');
 
   try {
@@ -48,7 +48,7 @@ app.post('/reserve', async (req, res) => {
     const reservedCount = snapshot.exists() ? snapshot.size : 0; // Get current reserved count
 
     if (reservedCount < maxCapacity) {
-      // Save reservation to Firebase, including membershipPaid
+      // Save reservation to Firebase, including membershipPaid and membershipType
       await set(ref(database, 'reservations/' + (reservedCount + 1)), {
         name,
         email,
@@ -57,6 +57,7 @@ app.post('/reserve', async (req, res) => {
         contactMethod,
         message,
         membershipPaid, // Include membershipPaid in the reservation data
+        membershipType, // Include membershipType in the reservation data
       });
       console.log(`Reserved by: ${name}, Email: ${email}, Phone: ${phone}, Sector: ${sector}, Contact Method: ${contactMethod}, Message: ${message}, Membership Paid: ${membershipPaid}`); // Log user data
       res.status(200).json({ message: 'Spot reserved!', reservedCount: reservedCount + 1 });
@@ -71,7 +72,7 @@ app.post('/reserve', async (req, res) => {
 
 // Route to modify membership status
 app.put('/modify-membership', async (req, res) => {
-  const { email, membershipPaid } = req.body; // Destructure user data to include email and membershipPaid
+  const { email, membershipPaid, membershipType } = req.body; // Add membershipType
   const dbRef = ref(database, 'reservations');
 
   try {
@@ -86,8 +87,11 @@ app.put('/modify-membership', async (req, res) => {
     // Get the key of the existing reservation
     const reservationKey = Object.keys(existingReservationsSnapshot.val())[0];
 
-    // Update the membershipPaid status
-    await set(ref(database, 'reservations/' + reservationKey + '/membershipPaid'), membershipPaid);
+    // Update the membershipPaid status and membershipType
+    await set(ref(database, 'reservations/' + reservationKey), {
+      membershipPaid,
+      membershipType, // Update membershipType as well
+    });
     
     res.status(200).json({ message: 'Membership status updated successfully!' });
   } catch (error) {

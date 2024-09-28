@@ -110,11 +110,11 @@ app.get('/reservations', async (req, res) => {
     }
   });
   
-  // Route to check if a user exists in the database
+  // Route to check if a user exists in the database and their payment status
   app.get('/check-user', async (req, res) => {
     const { email } = req.query; // Get the email from query parameters
     const dbRef = ref(database, 'reservations');
-  
+
     try {
       // Check if the email exists in the database
       const emailQuery = query(dbRef, orderByChild('email'), equalTo(email));
@@ -122,10 +122,17 @@ app.get('/reservations', async (req, res) => {
       
       if (existingReservationsSnapshot.exists()) {
         const reservationData = existingReservationsSnapshot.val();
-        res.status(200).json({ message: 'User exists', data: reservationData });
+        const reservationKeys = Object.keys(reservationData); // Get all reservation keys
+        const userReservations = reservationKeys.map(key => reservationData[key]); // Map to get user reservations
+
+        // Check if any of the user's reservations have membershipPaid as true
+        const isPaid = userReservations.some(reservation => reservation.membershipPaid === true ); // Adjust based on your logic
+        const paymentStatus = isPaid ? 'paid' : 'not paid';
+
+        res.status(200).json({ message: 'User exists', data: reservationData, paymentStatus });
       } else {
         res.status(404).json({ message: 'User does not exist' });
-      }
+      } 
     } catch (error) {
       console.error('Error checking user:', error);
       res.status(500).json({ message: 'Error checking user' });

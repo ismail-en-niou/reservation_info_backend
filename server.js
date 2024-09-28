@@ -76,7 +76,7 @@ app.get('/reservations', async (req, res) => {
   });
   // Route to modify membership status
   app.put('/modify-membership', async (req, res) => {
-    const { email, membershipPaid, membershipType } = req.body; // Destructure user data
+    const { email, membershipPaid, membershipType, contactMethod, message, name, phone, sector } = req.body; // Destructure user data
     const dbRef = ref(database, 'reservations');
   
     try {
@@ -91,16 +91,22 @@ app.get('/reservations', async (req, res) => {
       // Get the key of the existing reservation
       const reservationKey = Object.keys(existingReservationsSnapshot.val())[0];
   
-      // Update the membershipPaid status and membershipType
+      // Update the membershipPaid status, membershipType, and other fields
       await set(ref(database, 'reservations/' + reservationKey), {
         membershipPaid: membershipPaid || 'no', // Default to 'no' if membershipPaid is not provided
         membershipType, // Update membershipType as well
+        contactMethod, // Update contactMethod
+        email, // Update email
+        message, // Update message
+        name, // Update name
+        phone, // Update phone
+        sector, // Update sector
       });
       
-      res.status(200).json({ message: 'Membership status updated successfully!' });
+      res.status(200).json({ message: 'Membership status and other details updated successfully!' });
     } catch (error) {
-      console.error('Error modifying membership status:', error);
-      res.status(500).json({ message: 'Error modifying membership status' });
+      console.error('Error modifying membership status and other details:', error);
+      res.status(500).json({ message: 'Error modifying membership status and other details' });
     }
   });
   

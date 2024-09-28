@@ -74,64 +74,58 @@ app.get('/reservations', async (req, res) => {
       res.status(500).json({ message: 'Error reserving spot' });
     }
   });
-
-// Route to modify membership status
-app.put('/modify-membership', async (req, res) => {
-  const { email, membershipPaid, membershipType } = req.body; // Destructure user data
-  const dbRef = ref(database, 'reservations');
-
-  try {
-    // Check if the email exists in the database
-    const emailQuery = query(dbRef, orderByChild('email'), equalTo(email));
-    const existingReservationsSnapshot = await get(emailQuery);
-    
-    if (!existingReservationsSnapshot.exists()) {
-      return res.status(404).json({ message: 'No reservation found for this email!' });
+  // Route to modify membership status
+  app.put('/modify-membership', async (req, res) => {
+    const { email, membershipPaid, membershipType } = req.body; // Destructure user data
+    const dbRef = ref(database, 'reservations');
+  
+    try {
+      // Check if the email exists in the database
+      const emailQuery = query(dbRef, orderByChild('email'), equalTo(email));
+      const existingReservationsSnapshot = await get(emailQuery);
+      
+      if (!existingReservationsSnapshot.exists()) {
+        return res.status(404).json({ message: 'No reservation found for this email!' });
+      }
+  
+      // Get the key of the existing reservation
+      const reservationKey = Object.keys(existingReservationsSnapshot.val())[0];
+  
+      // Update the membershipPaid status and membershipType
+      await set(ref(database, 'reservations/' + reservationKey), {
+        membershipPaid: membershipPaid || 'no', // Default to 'no' if membershipPaid is not provided
+        membershipType, // Update membershipType as well
+      });
+      
+      res.status(200).json({ message: 'Membership status updated successfully!' });
+    } catch (error) {
+      console.error('Error modifying membership status:', error);
+      res.status(500).json({ message: 'Error modifying membership status' });
     }
-
-    // Get the key of the existing reservation
-    const reservationKey = Object.keys(existingReservationsSnapshot.val())[0];
-
-    // Update the membershipPaid status and membershipType
-    await set(ref(database, 'reservations/' + reservationKey), {
-      membershipPaid: membershipPaid || 'no', // Default to 'no' if membershipPaid is not provided
-      membershipType, // Update membershipType as well
-    });
-    
-    res.status(200).json({ message: 'Membership status updated successfully!' });
-  } catch (error) {
-    console.error('Error modifying membership status:', error);
-    res.status(500).json({ message: 'Error modifying membership status' });
-  }
-});
-
-// Route to check if a user exists in the database
-app.get('/check-user', async (req, res) => {
-  const { email } = req.query; // Get the email from query parameters
-  const dbRef = ref(database, 'reservations');
-
-  try {
-    // Check if the email exists in the database
-    const emailQuery = query(dbRef, orderByChild('email'), equalTo(email));
-    const existingReservationsSnapshot = await get(emailQuery);
-    
-    if (existingReservationsSnapshot.exists()) {
-      const reservationData = existingReservationsSnapshot.val();
-      const reservationKeys = Object.keys(reservationData); // Get all reservation keys
-      const userReservations = reservationKeys.map(key => reservationData[key]); // Map to get user reservations
-
-      // Check if any of the user's reservations have membershipPaid as true
-      const isPaid = userReservations.some(reservation => reservation.membershipPaid) ? 'is paid' : 'is not paid';
-      return res.status(200).json({ message: `User exists in the database and membership ${isPaid}.` });
-    } else {
-      return res.status(404).json({ message: 'User not found in the database.' });
+  });
+  
+  // Route to check if a user exists in the database
+  app.get('/check-user', async (req, res) => {
+    const { email } = req.query; // Get the email from query parameters
+    const dbRef = ref(database, 'reservations');
+  
+    try {
+      // Check if the email exists in the database
+      const emailQuery = query(dbRef, orderByChild('email'), equalTo(email));
+      const existingReservationsSnapshot = await get(emailQuery);
+      
+      if (existingReservationsSnapshot.exists()) {
+        const reservationData = existingReservationsSnapshot.val();
+        res.status(200).json({ message: 'User exists', data: reservationData });
+      } else {
+        res.status(404).json({ message: 'User does not exist' });
+      }
+    } catch (error) {
+      console.error('Error checking user:', error);
+      res.status(500).json({ message: 'Error checking user' });
     }
-  } catch (error) {
-    console.error('Error checking user:', error);
-    res.status(500).json({ message: 'Error checking user' });
-  }
-});
-
+  });
+  
 // Route to get all reservations
 app.get('/reservations/all', async (req, res) => {
   const dbRef = ref(database, 'reservations');

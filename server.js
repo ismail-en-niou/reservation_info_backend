@@ -31,45 +31,52 @@ app.get('/reservations', async (req, res) => {
   }
 });
 
-// Route to reserve a spot
-app.post('/reserve', async (req, res) => {
-  const { name, email, phone, sector, contactMethod, message, membershipType = 'basic' } = req.body; // Default to 'basic' for membershipType
-  const membershipPaid = 'no'; // Explicitly set membershipPaid to 'no'
-  const dbRef = ref(database, 'reservations');
+    // Route to reserve a spot
+    app.post('/reserve', async (req, res) => {
+      const { name, email, phone, sector, contactMethod, message, membershipType = 'basic' } = req.body;
 
-  try {
-    // Check if the email already exists in the database
-    const emailQuery = query(dbRef, orderByChild('email'), equalTo(email));
-    const existingReservationsSnapshot = await get(emailQuery);
-    if (existingReservationsSnapshot.exists()) {
-      return res.status(400).json({ message: 'Email already reserved a spot!' });
-    }
+      // Validate required fields
+      if (!name || !email || !phone || !sector || !contactMethod || !message) {
+        return res.status(400).json({ message: 'All fields are required.' });
+      }
 
-    const snapshot = await get(dbRef);
-    const reservedCount = snapshot.exists() ? snapshot.size : 0; // Get current reserved count
+      console.log('Received reservation data:', req.body); // Log the incoming request body
+      const membershipPaid = 'no'; // Explicitly set membershipPaid to 'no'
+      const dbRef = ref(database, 'reservations');
 
-    if (reservedCount < maxCapacity) {
-      // Save reservation to Firebase, including membershipPaid and membershipType
-      await set(ref(database, 'reservations/' + (reservedCount + 1)), {
-        name,
-        email,
-        phone,
-        sector, // Save the sector
-        contactMethod,
-        message,
-        membershipPaid, // Include membershipPaid in the reservation data
-        membershipType, // Include membershipType in the reservation data
-      });
-      console.log(`Reserved by: ${name}, Email: ${email}, Phone: ${phone}, Sector: ${sector}, Contact Method: ${contactMethod}, Message: ${message}, Membership Paid: ${membershipPaid}, Membership Type: ${membershipType}`); // Log user data
-      res.status(200).json({ message: 'Spot reserved!', reservedCount: reservedCount + 1 });
-    } else {
-      res.status(400).json({ message: 'No more spots available!' });
-    }
-  } catch (error) {
-    console.error('Error reserving spot:', error); // Log the error
-    res.status(500).json({ message: 'Error reserving spot' });
-  }
-});
+      try {
+        // Check if the email already exists in the database
+        const emailQuery = query(dbRef, orderByChild('email'), equalTo(email));
+        const existingReservationsSnapshot = await get(emailQuery);
+        if (existingReservationsSnapshot.exists()) {
+          return res.status(400).json({ message: 'Email already reserved a spot!' });
+        }
+
+        const snapshot = await get(dbRef);
+        const reservedCount = snapshot.exists() ? snapshot.size : 0; // Get current reserved count
+
+        if (reservedCount < maxCapacity) {
+          // Save reservation to Firebase, including membershipPaid and membershipType
+          await set(ref(database, 'reservations/' + (reservedCount + 1)), {
+            name,
+            email,
+            phone,
+            sector, // Save the sector
+            contactMethod,
+            message,
+            membershipPaid, // Include membershipPaid in the reservation data
+            membershipType, // Include membershipType in the reservation data
+          });
+          console.log(`Reserved by: ${name}, Email: ${email}, Phone: ${phone}, Sector: ${sector}, Contact Method: ${contactMethod}, Message: ${message}, Membership Paid: ${membershipPaid}, Membership Type: ${membershipType}`); // Log user data
+          res.status(200).json({ message: 'Spot reserved!', reservedCount: reservedCount + 1 });
+        } else {
+          res.status(400).json({ message: 'No more spots available!' });
+        }
+      } catch (error) {
+        console.error('Error reserving spot:', error); // Log the error
+        res.status(500).json({ message: 'Error reserving spot' });
+      }
+    });
 
 // Route to modify membership status
 app.put('/modify-membership', async (req, res) => {
@@ -90,7 +97,7 @@ app.put('/modify-membership', async (req, res) => {
 
     // Update the membershipPaid status and membershipType
     await set(ref(database, 'reservations/' + reservationKey), {
-      membershipPaid, // Update membershipPaid to accept 'no', 'basic', or 'pro'
+      membershipPaid: membershipPaid || 'no', // Default to 'no' if membershipPaid is not provided
       membershipType, // Update membershipType as well
     });
     
@@ -126,6 +133,24 @@ app.get('/check-user', async (req, res) => {
   } catch (error) {
     console.error('Error checking user:', error); // Log the error
     res.status(500).json({ message: 'Error checking user' });
+  }
+});
+
+// Route to get all reservations
+app.get('/reservations/all', async (req, res) => {
+  const dbRef = ref(database, 'reservations');
+
+  try {
+    const snapshot = await get(dbRef);
+    if (snapshot.exists()) {
+      const reservations = snapshot.val(); // Get all reservations
+      res.status(200).json(reservations); // Return all reservations
+    } else {
+      res.status(404).json({ message: 'No reservations found.' });
+    }
+  } catch (error) {
+    console.error('Error fetching all reservations:', error); // Log the error
+    res.status(500).json({ message: 'Error fetching reservations' });
   }
 });
 

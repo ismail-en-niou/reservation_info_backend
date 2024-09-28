@@ -39,7 +39,7 @@ app.post('/reserve', async (req, res) => {
     return res.status(400).json({ message: 'All fields are required.' });
   }
 
-  const membershipPaid = false ; // Default membershipPaid to 'no'
+  const membershipPaid = false; // Default membershipPaid to false
   const dbRef = ref(database, 'reservations');
 
   try {

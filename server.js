@@ -33,7 +33,8 @@ app.get('/reservations', async (req, res) => {
 
 // Route to reserve a spot
 app.post('/reserve', async (req, res) => {
-  const { name, email, phone, sector, contactMethod, message, membershipPaid, membershipType = 'basic' } = req.body; // Provide a default value for membershipType
+  const { name, email, phone, sector, contactMethod, message, membershipType = 'basic' } = req.body; // Default to 'basic' for membershipType
+  const membershipPaid = 'no'; // Explicitly set membershipPaid to 'no'
   const dbRef = ref(database, 'reservations');
 
   try {
@@ -89,7 +90,7 @@ app.put('/modify-membership', async (req, res) => {
 
     // Update the membershipPaid status and membershipType
     await set(ref(database, 'reservations/' + reservationKey), {
-      membershipPaid,
+      membershipPaid, // Update membershipPaid to accept 'no', 'basic', or 'pro'
       membershipType, // Update membershipType as well
     });
     

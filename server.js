@@ -127,7 +127,9 @@ app.get('/reservations', async (req, res) => {
 
         // Check if any of the user's reservations have membershipPaid as true
         const isPaid = userReservations.some(reservation => reservation.membershipPaid === true ); // Adjust based on your logic
-        const paymentStatus = isPaid ? 'paid' : 'not paid';
+        console.log(isPaid);  
+        const paymentStatus = isPaid === true ? 'yes' : 'no';
+        console.log(paymentStatus);
 
         res.status(200).json({ message: 'User exists', data: reservationData, paymentStatus });
       } else {

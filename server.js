@@ -33,7 +33,7 @@ app.get('/reservations', async (req, res) => {
 
 // Route to reserve a spot
 app.post('/reserve', async (req, res) => {
-  const { name, email, phone, sector, contactMethod, message, membershipPaid, membershipType } = req.body; // Add membershipType
+  const { name, email, phone, sector, contactMethod, message, membershipPaid, membershipType = 'basic' } = req.body; // Provide a default value for membershipType
   const dbRef = ref(database, 'reservations');
 
   try {
@@ -59,7 +59,7 @@ app.post('/reserve', async (req, res) => {
         membershipPaid, // Include membershipPaid in the reservation data
         membershipType, // Include membershipType in the reservation data
       });
-      console.log(`Reserved by: ${name}, Email: ${email}, Phone: ${phone}, Sector: ${sector}, Contact Method: ${contactMethod}, Message: ${message}, Membership Paid: ${membershipPaid}`); // Log user data
+      console.log(`Reserved by: ${name}, Email: ${email}, Phone: ${phone}, Sector: ${sector}, Contact Method: ${contactMethod}, Message: ${message}, Membership Paid: ${membershipPaid}, Membership Type: ${membershipType}`); // Log user data
       res.status(200).json({ message: 'Spot reserved!', reservedCount: reservedCount + 1 });
     } else {
       res.status(400).json({ message: 'No more spots available!' });

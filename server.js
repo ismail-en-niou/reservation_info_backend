@@ -9,7 +9,7 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-const maxCapacity = 10; // Maximum capacity of the club
+const maxCapacity = 0; // Maximum capacity of the club
 
 // Route to get current reserved count
 app.get('/reservations', async (req, res) => {
